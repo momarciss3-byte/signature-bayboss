@@ -412,7 +412,7 @@ function getNextDates(nb) {
   return dates;
 }
 
-async function genererPosts() {
+function genererPosts() {
   const activeReseaux = getActiveReseaux();
   const activeTypes = getActiveTypes();
 
@@ -428,121 +428,233 @@ async function genererPosts() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Génération en cours...';
 
-  // Afficher loading dans tous les onglets
-  ['planning','instagram','facebook','linkedin','gmb'].forEach(tab => {
-    document.getElementById('tab-' + tab).innerHTML = '<div class="loading"><div class="spinner"></div> L\'IA génère vos publications...</div>';
-  });
+  // Templates de posts par type et réseau
+  const templates = {
+    'avant/après chantier': {
+      instagram: (s, v, i) => `✨ Transformation incroyable ! Avant / Après chantier à ${v} 👀
 
-  const prompt = `Tu es un expert en marketing digital et réseaux sociaux pour BAYBOSS NETTOYAGE, société de nettoyage après travaux et fin de chantier à ${ville}.
+Après des travaux de ${s}, notre équipe est intervenue pour remettre les lieux en état parfait. Sol, vitres, menuiseries... tout a été traité avec soin !
 
-Génère exactement ${nbPosts} publications différentes pour les réseaux suivants : ${activeReseaux.join(', ')}.
-Types de contenu à alterner : ${activeTypes.join(', ')}.
-Service principal : ${service}.
-Zone géographique : ${ville}.
-${infos ? `Contexte : ${infos}` : ''}
+${i ? i + '
 
-Pour chaque publication, génère une version adaptée à CHAQUE réseau sélectionné :
-- Instagram : texte engageant avec emojis, hashtags (#NettoyageMarseille #FinDeChantier #BAYBOSS etc.), 150-200 mots
-- Facebook : texte chaleureux et informatif, moins de hashtags, 100-150 mots
-- LinkedIn : ton professionnel B2B, ciblé promoteurs/architectes/BTP, 150-200 mots, hashtags pro
-- Google My Business : court et impactant, 150 caractères max, mot-clé local + CTA
+' : ''}🏆 Résultat livré en une journée
+📞 Devis gratuit sous 24h : 07 52 23 75 46
+🌐 baybossnettoyage.fr
 
-Réponds UNIQUEMENT en JSON valide avec ce format exact :
-{
-  "posts": [
-    {
-      "id": 1,
-      "type": "avant/après chantier",
-      "service": "nettoyage fin de chantier",
-      "instagram": "texte instagram...",
-      "facebook": "texte facebook...",
-      "linkedin": "texte linkedin...",
-      "gmb": "texte gmb..."
+#NettoyageMarseille #FinDeChantier #AprèsTravaux #BAYBOSS #NettoyageApresTravaux #Marseille #BTP #Chantier #Propre #Transformation`,
+      facebook: (s, v, i) => `🏗️ Nouveau chantier terminé à ${v} !
+
+Notre équipe BAYBOSS NETTOYAGE vient d'intervenir pour un ${s}. Le résultat parle de lui-même : des espaces impeccables, prêts à être livrés.
+
+${i ? '📋 ' + i + '
+
+' : ''}✅ Intervention 7j/7 de 8h à 20h
+✅ Devis gratuit sous 24h
+✅ Professionnels et particuliers
+
+📞 07 52 23 75 46 | baybossnettoyage.fr`,
+      linkedin: (s, v, i) => `Nouvelle réalisation BAYBOSS NETTOYAGE ✅
+
+Intervention de ${s} à ${v}. Comme toujours, notre équipe a livré un espace impeccable dans les délais convenus.
+
+${i ? i + '
+
+' : ''}Nous accompagnons les professionnels du BTP, promoteurs et architectes sur Marseille et les Bouches-du-Rhône. Devis sous 24h, intervention 7j/7.
+
+📞 07 52 23 75 46
+
+#BTP #NettoyageChantier #Marseille #Promoteur #FinDeChantier #BAYBOSS`,
+      gmb: (s, v, i) => `✅ ${s} à ${v} — BAYBOSS NETTOYAGE. Intervention 7j/7. Devis gratuit sous 24h ☎ 07 52 23 75 46`
+    },
+    'mise en avant de service': {
+      instagram: (s, v, i) => `🔧 Focus service : ${s} à ${v} !
+
+Vous venez de terminer des travaux ? Notre équipe spécialisée intervient pour remettre vos espaces en état parfait.
+
+${i ? i + '
+
+' : ''}✅ Sols, vitres, menuiseries
+✅ Équipements professionnels
+✅ Résultat garanti
+✅ Intervention 7j/7
+
+📞 Devis gratuit sous 24h : 07 52 23 75 46
+
+#${s.replace(/ /g,'').replace(/é/g,'e').replace(/è/g,'e').replace(/à/g,'a')} #NettoyageMarseille #BAYBOSS #FinDeChantier #Marseille #BTP`,
+      facebook: (s, v, i) => `💡 Saviez-vous que BAYBOSS NETTOYAGE est spécialisé dans le ${s} à ${v} ?
+
+${i ? i + '
+
+' : ''}Nos techniciens utilisent des équipements professionnels adaptés à chaque surface pour un résultat impeccable avant livraison.
+
+🎯 Particuliers : bénéficiez de 50% de réduction grâce au crédit d'impôt !
+
+📞 07 52 23 75 46 — Devis gratuit sous 24h`,
+      linkedin: (s, v, i) => `BAYBOSS NETTOYAGE — Expert en ${s} à ${v} et dans les Bouches-du-Rhône.
+
+${i ? i + '
+
+' : ''}Nous intervenons pour les entreprises du BTP, promoteurs immobiliers, architectes et syndics. Protocoles adaptés, délais respectés, résultat garanti.
+
+→ Devis gratuit sous 24h
+→ Intervention 7j/7 de 8h à 20h
+→ Références : Five Guys, 13 Habitat, NGE Fondations...
+
+📞 07 52 23 75 46
+
+#Nettoyage #BTP #Marseille #BAYBOSS #FinDeChantier`,
+      gmb: (s, v, i) => `🧹 ${s} à ${v} — BAYBOSS NETTOYAGE. Pros & particuliers. 7j/7. ☎ 07 52 23 75 46. Devis 24h !`
+    },
+    'conseil professionnel': {
+      instagram: (s, v, i) => `💡 Le saviez-vous ? Après des travaux, les sols accumulent laitance de ciment, traces de peinture et résidus de colle — impossibles à enlever avec des produits ménagers classiques.
+
+Chez BAYBOSS NETTOYAGE, on utilise une mono-brosse professionnelle pour un résultat irréprochable à ${v} !
+
+${i ? i + '
+
+' : ''}📞 07 52 23 75 46 | Devis gratuit sous 24h
+
+#ConseilPro #NettoyageMarseille #BAYBOSS #AprèsTravaux #FinDeChantier`,
+      facebook: (s, v, i) => `📚 Conseil BAYBOSS NETTOYAGE :
+
+Pourquoi faire appel à un professionnel pour le ${s} ?
+
+👉 Les salissures de chantier nécessitent des produits et équipements spécialisés
+👉 Un nettoyage mal réalisé peut abîmer vos revêtements neufs
+👉 Nos techniciens sont formés pour traiter chaque type de surface
+
+${i ? i + '
+
+' : ''}Basés à ${v}, on intervient 7j/7 !
+📞 07 52 23 75 46`,
+      linkedin: (s, v, i) => `📌 Bon à savoir pour les professionnels du BTP :
+
+Le nettoyage de fin de chantier est une étape cruciale qui conditionne la qualité de la livraison. Un espace mal nettoyé = une première impression négative pour votre client.
+
+BAYBOSS NETTOYAGE intervient en fin de chantier à ${v} avec des équipements professionnels pour garantir une livraison impeccable.
+
+${i ? i + '
+' : ''}→ Réactivité garantie
+→ Protocoles adaptés BTP
+→ Devis sous 24h
+
+📞 07 52 23 75 46
+
+#BTP #QualiteChantier #Marseille #BAYBOSS`,
+      gmb: (s, v, i) => `💡 Conseil pro : ${s} à ${v}. BAYBOSS NETTOYAGE, experts certifiés. Devis gratuit 24h. ☎ 07 52 23 75 46`
+    },
+    'offre promotionnelle': {
+      instagram: (s, v, i) => `🎯 OFFRE SPÉCIALE — ${s} à ${v} !
+
+${i ? i + '
+
+' : ''}🏷️ Devis gratuit et sans engagement sous 24h
+⚡ Intervention possible sous 48h
+✅ Satisfaction garantie
+
+Particuliers : profitez du crédit d'impôt de 50% sur votre facture !
+
+📞 07 52 23 75 46
+🌐 baybossnettoyage.fr
+
+#OffreSpéciale #NettoyageMarseille #BAYBOSS #CréditImpôt #FinDeChantier`,
+      facebook: (s, v, i) => `🎉 BAYBOSS NETTOYAGE vous propose :
+
+✨ ${s} à ${v}
+${i ? '📋 ' + i + '
+' : ''}💰 Devis GRATUIT sous 24h
+⚡ Démarrage sous 48h
+🏷️ Crédit d'impôt 50% pour les particuliers
+
+Contactez-nous maintenant !
+📞 07 52 23 75 46 | baybossnettoyage.fr`,
+      linkedin: (s, v, i) => `BAYBOSS NETTOYAGE — Offre entreprises BTP :
+
+${s} à ${v} et dans toute la région.
+
+${i ? i + '
+
+' : ''}Nous proposons des contrats adaptés aux chantiers de toute taille, avec des tarifs transparents et une réactivité garantie.
+
+→ Devis sous 24h
+→ Facturation simplifiée
+→ Références disponibles sur demande
+
+📞 07 52 23 75 46
+
+#BTP #Nettoyage #Marseille #BAYBOSS #Chantier`,
+      gmb: (s, v, i) => `🎯 Offre ${s} à ${v} — BAYBOSS NETTOYAGE. Crédit impôt 50% particuliers. Devis 24h. ☎ 07 52 23 75 46`
     }
-  ]
-}`;
+  };
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
+  const dates = getNextDates(nbPosts);
+  allPosts = [];
+
+  for (let i = 0; i < nbPosts; i++) {
+    const typeIndex = i % activeTypes.length;
+    const type = activeTypes[typeIndex];
+    const template = templates[type] || templates['mise en avant de service'];
+    allPosts.push({
+      id: i + 1,
+      type: type,
+      service: service,
+      instagram: reseaux.ig ? template.instagram(service, ville, infos) : null,
+      facebook: reseaux.fb ? template.facebook(service, ville, infos) : null,
+      linkedin: reseaux.li ? template.linkedin(service, ville, infos) : null,
+      gmb: reseaux.gmb ? template.gmb(service, ville, infos) : null,
     });
+  }
 
-    const data = await response.json();
-    const raw = data.content.map(b => b.text || '').join('');
+  statPosts += allPosts.length;
+  document.getElementById('stat-posts').textContent = statPosts;
+  document.getElementById('stat-jours').textContent = allPosts.length * 3;
+  updateStats();
 
-    let parsed;
-    try {
-      const clean = raw.replace(/```json|```/g, '').trim();
-      parsed = JSON.parse(clean);
-    } catch(e) {
-      throw new Error('Erreur de parsing JSON');
+  const typeLabels = { 'avant/après chantier': '📸', 'mise en avant de service': '✅', 'conseil professionnel': '💡', 'offre promotionnelle': '🎯' };
+
+  // Planning
+  document.getElementById('tab-planning').innerHTML = allPosts.map((p, i) => `
+    <div class="planning-item">
+      <div class="planning-date">${dates[i]}</div>
+      <div class="planning-info">
+        <div class="planning-title">${typeLabels[p.type] || '📝'} ${p.type} — ${p.service}</div>
+        <div class="planning-sub">Publication #${p.id}</div>
+        <div class="planning-networks">
+          ${reseaux.ig ? '<span class="net-badge net-ig">Instagram</span>' : ''}
+          ${reseaux.fb ? '<span class="net-badge net-fb">Facebook</span>' : ''}
+          ${reseaux.li ? '<span class="net-badge net-li">LinkedIn</span>' : ''}
+          ${reseaux.gmb ? '<span class="net-badge net-gmb">GMB</span>' : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // Onglets réseaux
+  const reseauConfig = [
+    { id: 'instagram', key: 'instagram', label: '📸 Instagram', active: reseaux.ig },
+    { id: 'facebook', key: 'facebook', label: '👍 Facebook', active: reseaux.fb },
+    { id: 'linkedin', key: 'linkedin', label: '💼 LinkedIn', active: reseaux.li },
+    { id: 'gmb', key: 'gmb', label: '📍 Google My Business', active: reseaux.gmb },
+  ];
+
+  reseauConfig.forEach(({ id, key, label, active }) => {
+    if (!active) {
+      document.getElementById('tab-' + id).innerHTML = `<div class="empty"><div class="empty-icon">🔕</div><div class="empty-title">${label} désactivé</div></div>`;
+      return;
     }
-
-    allPosts = parsed.posts || [];
-    const dates = getNextDates(allPosts.length);
-    statPosts += allPosts.length;
-
-    document.getElementById('stat-posts').textContent = statPosts;
-    document.getElementById('stat-jours').textContent = allPosts.length * 3;
-    updateStats();
-
-    // Remplir Planning
-    const typeLabels = { 'avant/après chantier': '📸', 'mise en avant de service': '✅', 'conseil professionnel': '💡', 'offre promotionnelle': '🎯' };
-    document.getElementById('tab-planning').innerHTML = allPosts.map((p, i) => `
-      <div class="planning-item">
-        <div class="planning-date">${dates[i]}</div>
-        <div class="planning-info">
-          <div class="planning-title">${typeLabels[p.type] || '📝'} ${p.type} — ${p.service}</div>
-          <div class="planning-sub">Publication #${p.id}</div>
-          <div class="planning-networks">
-            ${reseaux.ig ? '<span class="net-badge net-ig">Instagram</span>' : ''}
-            ${reseaux.fb ? '<span class="net-badge net-fb">Facebook</span>' : ''}
-            ${reseaux.li ? '<span class="net-badge net-li">LinkedIn</span>' : ''}
-            ${reseaux.gmb ? '<span class="net-badge net-gmb">GMB</span>' : ''}
-          </div>
+    document.getElementById('tab-' + id).innerHTML = allPosts.map((p, i) => `
+      <div class="post-card">
+        <div class="post-header">
+          <div class="post-network">${label} — Post #${p.id}</div>
+          <div class="post-date">${dates[i]}</div>
+        </div>
+        <div class="post-text" id="post-${id}-${i}">${p[key] || 'Non disponible'}</div>
+        <div class="post-actions">
+          <button class="btn-sm" onclick="copierPost('post-${id}-${i}', this)">📋 Copier</button>
         </div>
       </div>
     `).join('');
-
-    // Remplir chaque onglet réseau
-    const reseauConfig = [
-      { id: 'instagram', key: 'instagram', label: '📸 Instagram', active: reseaux.ig },
-      { id: 'facebook', key: 'facebook', label: '👍 Facebook', active: reseaux.fb },
-      { id: 'linkedin', key: 'linkedin', label: '💼 LinkedIn', active: reseaux.li },
-      { id: 'gmb', key: 'gmb', label: '📍 Google My Business', active: reseaux.gmb },
-    ];
-
-    reseauConfig.forEach(({ id, key, label, active }) => {
-      if (!active) {
-        document.getElementById('tab-' + id).innerHTML = `<div class="empty"><div class="empty-icon">🔕</div><div class="empty-title">${label} désactivé</div></div>`;
-        return;
-      }
-      document.getElementById('tab-' + id).innerHTML = allPosts.map((p, i) => `
-        <div class="post-card">
-          <div class="post-header">
-            <div class="post-network">${label} — Post #${p.id}</div>
-            <div class="post-date">${dates[i]}</div>
-          </div>
-          <div class="post-text" id="post-${id}-${i}">${p[key] || 'Non disponible'}</div>
-          <div class="post-actions">
-            <button class="btn-sm" onclick="copierPost('post-${id}-${i}', this)">📋 Copier</button>
-            <button class="btn-sm" onclick="regenererPost(${i}, '${key}')">🔄 Régénérer</button>
-          </div>
-        </div>
-      `).join('');
-    });
-
-  } catch(err) {
-    ['planning','instagram','facebook','linkedin','gmb'].forEach(tab => {
-      document.getElementById('tab-' + tab).innerHTML = `<div style="padding:30px;color:#e53e3e;font-size:13px">❌ Erreur : ${err.message}</div>`;
-    });
-  }
+  });
 
   btn.disabled = false;
   btn.innerHTML = '⚡ Générer le planning de publications';
