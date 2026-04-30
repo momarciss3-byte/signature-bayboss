@@ -547,9 +547,17 @@ canvas {
           <div style="font-size:12px;color:var(--gray);margin-bottom:8px">Votre signature enregistrée</div>
           <img id="s-sig" style="max-width:200px;border:1px solid var(--border);border-radius:8px;padding:6px;background:white" src="" alt="Signature">
         </div>
-        <button class="btn-submit" style="max-width:280px;margin:0 auto" onclick="window.close()">
-          Quitter la page
-        </button>
+        <div style="display:flex;flex-direction:column;gap:12px;max-width:320px;margin:0 auto;">
+          <button class="btn-submit" id="btn-dl-client" style="background:var(--success);" onclick="telechargerMonDevis()">
+            ⬇ Télécharger mon devis signé
+          </button>
+          <button class="btn-submit" id="btn-whatsapp" style="background:#25D366;" onclick="envoyerWhatsApp()">
+            📲 Envoyer par WhatsApp
+          </button>
+          <button class="btn-submit" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);" onclick="window.close()">
+            Quitter la page
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -868,6 +876,38 @@ function openAdmin() {
 function closeAdmin() {
   document.getElementById('admin-panel').classList.remove('open');
 }
+function telechargerMonDevis() {
+  // Télécharger le dernier devis signé (côté client)
+  const d = signedDocs[signedDocs.length - 1];
+  if (!d || !d.pdfSigne) {
+    alert('Aucun devis signé disponible.');
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = d.pdfSigne;
+  a.download = 'devis-signe-' + d.prenom + '-' + d.nom + '-' + d.date.replace(/\//g, '-') + '.jpg';
+  a.click();
+}
+
+function envoyerWhatsApp() {
+  const d = signedDocs[signedDocs.length - 1];
+  if (!d) return;
+  const msg = encodeURIComponent(`Bonjour BAYBOSS NETTOYAGE,
+
+Je vous transmets mon devis signé.
+
+Signataire : ${d.prenom} ${d.nom}
+Document : ${d.filename}
+Date : ${d.date}
+Bon pour accord : ${d.bonAccord ? 'Oui' : 'Non'}
+
+J'ai téléchargé le document signé et je vous l'envoie en pièce jointe.
+
+Cordialement,
+${d.prenom} ${d.nom}`);
+  window.open('https://wa.me/33752237546?text=' + msg, '_blank');
+}
+
 function telechargerDevis(id) {
   const d = signedDocs.find(x => x.id === id);
   if (!d || !d.pdfSigne) return;
