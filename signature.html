@@ -551,9 +551,7 @@ canvas {
           <button class="btn-submit" id="btn-dl-client" style="background:var(--success);" onclick="telechargerMonDevis()">
             ⬇ Télécharger mon devis signé
           </button>
-          <button class="btn-submit" id="btn-whatsapp" style="background:#25D366;" onclick="envoyerWhatsApp()">
-            📲 Envoyer par WhatsApp
-          </button>
+
           <button class="btn-submit" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);" onclick="window.close()">
             Quitter la page
           </button>
@@ -828,7 +826,7 @@ async function apposersignatureSurPDF(sigDataURL, dateStr, nomComplet) {
 
   // Dimensions de la zone signature
   const zoneX = pw * 0.52;
-  const zoneY = lastY + lastH * 0.74;
+  const zoneY = lastY + lastH * 0.85;
   const zoneW = pw * 0.42;
   const sigImgH = lastH * 0.09;
   const padding = 12;
@@ -889,10 +887,12 @@ function telechargerMonDevis() {
   a.click();
 }
 
-function envoyerWhatsApp() {
-  const d = signedDocs[signedDocs.length - 1];
-  if (!d) return;
-  const msg = encodeURIComponent(`Bonjour BAYBOSS NETTOYAGE,
+Cordialement,
+${d.prenom} ${d.nom}`);
+      window.open('https://wa.me/33752237546?text=' + msg, '_blank');
+    }, 2000);
+  } else {
+    const msg = encodeURIComponent(`Bonjour BAYBOSS NETTOYAGE,
 
 Je vous transmets mon devis signé.
 
@@ -901,11 +901,10 @@ Document : ${d.filename}
 Date : ${d.date}
 Bon pour accord : ${d.bonAccord ? 'Oui' : 'Non'}
 
-J'ai téléchargé le document signé et je vous l'envoie en pièce jointe.
-
 Cordialement,
 ${d.prenom} ${d.nom}`);
-  window.open('https://wa.me/33752237546?text=' + msg, '_blank');
+    window.open('https://wa.me/33752237546?text=' + msg, '_blank');
+  }
 }
 
 function telechargerDevis(id) {
