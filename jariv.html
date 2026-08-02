@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>JARIV — Je suis en route !</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+* { margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent; }
+:root { --navy:#0F2940;--blue:#1A5F8A;--accent:#F5A623;--green:#18936A;--red:#E53E3E; }
+html,body { height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--navy);color:white;overflow:hidden; }
+.screen { display:none;flex-direction:column;height:100vh; }
+.screen.active { display:flex; }
+#home { align-items:center;justify-content:center;padding:24px;text-align:center;background:linear-gradient(160deg,#0a1e35,#1a5f8a);overflow-y:auto; }
+.app-icon { width:88px;height:88px;background:var(--accent);border-radius:26px;display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto 14px;box-shadow:0 12px 40px rgba(245,166,35,.45); }
+.app-name { font-size:38px;font-weight:900;letter-spacing:-1px; }
+.app-name span { color:var(--accent); }
+.tagline { font-size:13px;color:rgba(255,255,255,.5);margin:6px 0 28px; }
+.card { background:rgba(255,255,255,.09);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.13);border-radius:20px;padding:22px;width:100%;max-width:400px;margin-bottom:14px;text-align:left; }
+.card-ico { font-size:26px;margin-bottom:10px; }
+.card h2 { font-size:16px;font-weight:800;margin-bottom:6px; }
+.card p { font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;line-height:1.6; }
+.btn { width:100%;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit; }
+.btn-acc { background:var(--accent);color:var(--navy); }
+.btn-glass { background:rgba(255,255,255,.12);color:white;border:1px solid rgba(255,255,255,.2); }
+.btn-red { background:var(--red);color:white; }
+.inp { width:100%;padding:13px 16px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.18);border-radius:12px;color:white;font-size:18px;font-family:inherit;outline:none;letter-spacing:4px;text-transform:uppercase;text-align:center; }
+.inp::placeholder { color:rgba(255,255,255,.3);letter-spacing:0;font-size:14px;text-align:left; }
+.saved { background:rgba(24,147,106,.15);border:1px solid rgba(24,147,106,.35);border-radius:14px;padding:14px;margin-bottom:14px;width:100%;max-width:400px;display:flex;align-items:center;justify-content:space-between; }
+.saved-code { font-size:22px;font-weight:900;letter-spacing:4px;color:var(--green); }
+.saved-lbl { font-size:11px;color:rgba(255,255,255,.4);margin-bottom:3px; }
+.btn-xs { padding:8px 14px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit; }
+.topbar { background:var(--navy);padding:13px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;z-index:10; }
+.tname { font-size:18px;font-weight:900; }
+.tname span { color:var(--accent); }
+.badge { font-size:11px;font-weight:700;padding:5px 13px;border-radius:100px; }
+.b-live { background:var(--green);color:white;animation:blink 2s infinite; }
+.b-off { background:rgba(255,255,255,.15);color:rgba(255,255,255,.5); }
+.b-wait { background:var(--accent);color:var(--navy); }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.5} }
+#ms,#mt { flex:1;min-height:0; }
+.panel { background:var(--navy);flex-shrink:0;padding:16px;border-top:1px solid rgba(255,255,255,.08);overflow-y:auto;max-height:46vh; }
+.cbox { background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.3);border-radius:14px;padding:14px;margin-bottom:12px; }
+.clbl { font-size:12px;color:rgba(255,255,255,.45);margin-bottom:6px; }
+.cbig { font-size:32px;font-weight:900;letter-spacing:8px;color:var(--accent);text-align:center;padding:6px 0; }
+.cbtns { display:flex;gap:8px;margin-top:10px; }
+.btn-s { flex:1;padding:11px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit; }
+.srow { display:flex;align-items:center;gap:10px;margin-bottom:11px; }
+.dot { width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+.dg { background:var(--green);animation:pulse 1.5s infinite; }
+.dr { background:var(--red); }
+.do { background:var(--accent);animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)} }
+.stxt { font-size:14px;font-weight:600; }
+.eta { display:flex;gap:8px;margin-bottom:12px; }
+.ec { flex:1;background:rgba(255,255,255,.07);border-radius:11px;padding:11px;text-align:center; }
+.ev { font-size:20px;font-weight:900;color:var(--accent); }
+.el { font-size:10px;color:rgba(255,255,255,.38);margin-top:2px; }
+.coords { background:rgba(255,255,255,.05);border-radius:9px;padding:9px 13px;font-size:11px;color:rgba(255,255,255,.3);font-family:monospace;margin-bottom:12px;word-break:break-all; }
+.toast { position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--green);color:white;padding:11px 22px;border-radius:100px;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap; }
+.toast.show { opacity:1; }
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- HOME -->
+<div class="screen active" id="home">
+  <div class="app-icon">📍</div>
+  <div class="app-name">J'<span>ARIV</span></div>
+  <div class="tagline">Partagez votre trajet en temps réel</div>
+  <div id="saved-block" style="display:none">
+    <div class="saved">
+      <div>
+        <div class="saved-lbl">Session mémorisée</div>
+        <div class="saved-code" id="saved-txt"></div>
+        <div class="saved-lbl" id="saved-role-txt" style="margin-top:3px"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn-xs btn-acc" onclick="resumeSession()">▶ Reprendre</button>
+        <button class="btn-xs" style="background:rgba(255,255,255,.1);color:white" onclick="forgetSession()">✕ Oublier</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-ico">🚗</div>
+    <h2>Je suis en route</h2>
+    <p>Partagez votre position GPS en direct. La personne qui attend voit votre trajet en temps réel.</p>
+    <button class="btn btn-acc" onclick="startShare()">Partager ma position</button>
+  </div>
+  <div class="card">
+    <div class="card-ico">👁️</div>
+    <h2>Je suis la personne qui attend</h2>
+    <p>Entrez le code reçu une seule fois — mémorisé automatiquement.</p>
+    <input class="inp" type="text" id="cinp" placeholder="Code (ex: AB12CD)" maxlength="6">
+    <div style="height:10px"></div>
+    <button class="btn btn-glass" onclick="joinTrack()">Voir le trajet</button>
+  </div>
+</div>
+
+<!-- PARTAGE -->
+<div class="screen" id="ss">
+  <div class="topbar">
+    <div class="tname">J'<span>ARIV</span></div>
+    <div class="badge b-live" id="sbadge">EN DIRECT</div>
+  </div>
+  <div id="ms"></div>
+  <div class="panel">
+    <div class="cbox">
+      <div class="clbl">📤 Envoyez ce lien à la personne qui attend :</div>
+      <div class="cbig" id="cdisplay">------</div>
+      <div class="cbtns">
+        <button class="btn-s" style="background:var(--accent);color:var(--navy)" onclick="copyCode()">📋 Code</button>
+        <button class="btn-s" style="background:var(--blue);color:white" onclick="copyLink()">🔗 Lien direct</button>
+      </div>
+    </div>
+    <div class="srow"><div class="dot dg" id="sdot"></div><div class="stxt" id="stxt">Démarrage GPS...</div></div>
+    <div class="coords" id="scoords">En attente du GPS...</div>
+    <button class="btn btn-red" onclick="stopShare()">⏹ Arrêter</button>
+  </div>
+</div>
+
+<!-- TRACKING -->
+<div class="screen" id="ts">
+  <div class="topbar">
+    <div class="tname">J'<span>ARIV</span></div>
+    <div class="badge b-wait" id="tbadge">EN DIRECT</div>
+  </div>
+  <div id="mt"></div>
+  <div class="panel">
+    <div class="eta">
+      <div class="ec"><div class="ev" id="espeed">--</div><div class="el">km/h</div></div>
+      <div class="ec"><div class="ev" id="eago">--</div><div class="el">sec. màj</div></div>
+      <div class="ec"><div class="ev" id="ecode" style="font-size:13px;letter-spacing:2px">--</div><div class="el">session</div></div>
+    </div>
+    <div class="srow"><div class="dot do" id="tdot"></div><div class="stxt" id="ttxt">En attente...</div></div>
+    <div class="coords" id="tcoords">En attente...</div>
+    <button class="btn btn-glass" onclick="goHome()">← Retour</button>
+  </div>
+</div>
+
+<script>
+// ══ ÉTAT ══
+let mapS=null,mapT=null,markerS=null,markerT=null,markerDest=null;
+let watchId=null,pollId=null,agoId=null,ws=null;
+let currentCode=null,lastTs=null;
+
+// ══ STORAGE ══
+const save=(c,r)=>{localStorage.setItem('jc',c);localStorage.setItem('jr',r);};
+const load=()=>({code:localStorage.getItem('jc'),role:localStorage.getItem('jr')});
+const forget=()=>{localStorage.removeItem('jc');localStorage.removeItem('jr');};
+
+// ══ INIT ══
+window.addEventListener('load',()=>{
+  const p=new URLSearchParams(location.search);
+  const s=p.get('s');
+  if(s){ save(s.toUpperCase(),'track'); joinWithCode(s.toUpperCase()); return; }
+  const sv=load();
+  if(sv.code){
+    document.getElementById('saved-block').style.display='block';
+    document.getElementById('saved-txt').textContent=sv.code;
+    document.getElementById('saved-role-txt').textContent=sv.role==='share'?'🚗 En route':'👁️ Observateur';
+  }
+});
+function resumeSession(){ const sv=load(); if(!sv.code)return; sv.role==='share'?startShareWith(sv.code):joinWithCode(sv.code); }
+function forgetSession(){ forget(); document.getElementById('saved-block').style.display='none'; toast('Session oubliée'); }
+
+// ══ CARTE ══
+function mkMap(id){ const m=L.map(id,{zoomControl:true,attributionControl:false}); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m); return m; }
+const carIco=()=>L.divIcon({html:'<div style="background:#F5A623;border:3px solid white;border-radius:50%;width:46px;height:46px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 20px rgba(0,0,0,.5)">🚗</div>',iconSize:[46,46],iconAnchor:[23,23],className:''});
+const destIco=()=>L.divIcon({html:'<div style="background:#E53E3E;border:3px solid white;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.4)">📍</div>',iconSize:[40,40],iconAnchor:[20,20],className:''});
+function fitBoth(m,a,b){ try{ m.fitBounds(L.featureGroup([a,b]).getBounds().pad(.25)); }catch(e){} }
+
+// ══ WEBSOCKET TEMPS RÉEL (HiveMQ broker MQTT public) ══
+// On utilise un WebSocket public MQTT pour envoyer/recevoir les positions
+function connectWS(code, onMsg){
+  try{
+    // Broker MQTT public gratuit via WebSocket
+    const clientId='jariv_'+Math.random().toString(36).substr(2,8);
+    ws=new WebSocket('wss://broker.hivemq.com:8884/mqtt');
+    ws.binaryType='arraybuffer';
+
+    ws.onopen=()=>{
+      // Connexion MQTT
+      const topic='jariv/'+code;
+      // CONNECT packet
+      const enc=new TextEncoder();
+      const clientIdB=enc.encode(clientId);
+      const buf=new Uint8Array(10+2+clientIdB.length);
+      let i=0;
+      // Fixed header
+      buf[i++]=0x10; // CONNECT
+      buf[i++]=8+2+clientIdB.length; // remaining length
+      // Variable header
+      buf[i++]=0;buf[i++]=4; // protocol name length
+      buf[i++]=77;buf[i++]=81;buf[i++]=84;buf[i++]=84; // MQTT
+      buf[i++]=4; // protocol level
+      buf[i++]=2; // connect flags (clean session)
+      buf[i++]=0;buf[i++]=60; // keep alive 60s
+      // Client ID
+      buf[i++]=0;buf[i++]=clientIdB.length;
+      clientIdB.forEach(b=>buf[i++]=b);
+      ws.send(buf.buffer);
+
+      // SUBSCRIBE
+      setTimeout(()=>{
+        const topicB=enc.encode(topic);
+        const sub=new Uint8Array(7+topicB.length);
+        let j=0;
+        sub[j++]=0x82; // SUBSCRIBE
+        sub[j++]=5+topicB.length; // remaining
+        sub[j++]=0;sub[j++]=1; // packet id
+        sub[j++]=0;sub[j++]=topicB.length;
+        topicB.forEach(b=>sub[j++]=b);
+        sub[j++]=0; // QoS 0
+        ws.send(sub.buffer);
+      },500);
+    };
+
+    ws.onmessage=e=>{
+      try{
+        const dec=new TextDecoder();
+        const buf=new Uint8Array(e.data);
+        if(buf[0]===0x30){ // PUBLISH packet
+          // Parser le payload MQTT
+          let i=2; // skip fixed header + remaining length
+          // topic length
+          const tlen=(buf[i]<<8)|buf[i+1]; i+=2+tlen;
+          // payload
+          const payload=dec.decode(buf.slice(i));
+          const d=JSON.parse(payload);
+          if(onMsg) onMsg(d);
+        }
+      }catch(err){}
+    };
+
+    ws.onerror=()=>{ console.log('WS error'); };
+    ws.onclose=()=>{ setTimeout(()=>{ if(currentCode) connectWS(code,onMsg); },3000); };
+
+    return {
+      publish:(d)=>{
+        if(ws&&ws.readyState===1){
+          try{
+            const enc=new TextEncoder();
+            const topic='jariv/'+code;
+            const topicB=enc.encode(topic);
+            const payload=enc.encode(JSON.stringify(d));
+            const pub=new Uint8Array(4+topicB.length+payload.length);
+            let i=0;
+            pub[i++]=0x30; // PUBLISH
+            pub[i++]=2+topicB.length+payload.length; // remaining
+            pub[i++]=0;pub[i++]=topicB.length;
+            topicB.forEach(b=>pub[i++]=b);
+            payload.forEach(b=>pub[i++]=b);
+            ws.send(pub.buffer);
+          }catch(e){}
+        }
+      }
+    };
+  }catch(e){ return null; }
+}
+
+// ══ CODE ══
+function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[~~(Math.random()*c.length)]).join(''); }
+
+// ══ PARTAGE ══
+let wsConn=null;
+function startShare(){ startShareWith(genCode()); }
+
+function startShareWith(code){
+  if(!navigator.geolocation){ alert('GPS non disponible.'); return; }
+  currentCode=code;
+  save(code,'share');
+  showScreen('ss');
+  document.getElementById('cdisplay').textContent=code;
+  if(!mapS){ mapS=mkMap('ms'); mapS.setView([43.2965,5.3698],14); }
+
+  // Connexion WebSocket
+  wsConn=connectWS(code, d=>{
+    // Recevoir position observateur
+    if(d.type==='observer'&&mapS){
+      const ll=[d.lat,d.lng];
+      if(!markerDest){ markerDest=L.marker(ll,{icon:destIco()}).addTo(mapS).bindPopup('📍 La personne qui attend'); }
+      else markerDest.setLatLng(ll);
+    }
+  });
+
+  watchId=navigator.geolocation.watchPosition(pos=>{
+    const {latitude:lat,longitude:lng,speed}=pos.coords;
+    const kmh=speed?Math.round(speed*3.6):0;
+    const ll=[lat,lng];
+    if(!markerS){ markerS=L.marker(ll,{icon:carIco()}).addTo(mapS); mapS.setView(ll,16); }
+    else { markerS.setLatLng(ll); mapS.panTo(ll); }
+    const d={type:'driver',lat,lng,speed:kmh,ts:Date.now()};
+    // Envoyer via WebSocket
+    if(wsConn) wsConn.publish(d);
+    // Fallback localStorage
+    localStorage.setItem('jp_'+code,JSON.stringify(d));
+    document.getElementById('stxt').textContent='🟢 En direct · '+kmh+' km/h';
+    document.getElementById('scoords').textContent='📍 '+lat.toFixed(5)+', '+lng.toFixed(5)+' · '+kmh+' km/h';
+    document.getElementById('sdot').className='dot dg';
+  },err=>{
+    document.getElementById('stxt').textContent='⚠️ Activez la localisation GPS';
+    document.getElementById('sdot').className='dot dr';
+  },{enableHighAccuracy:true,timeout:8000,maximumAge:1500});
+}
+
+function stopShare(){
+  if(watchId){ navigator.geolocation.clearWatch(watchId); watchId=null; }
+  if(ws){ ws.close(); ws=null; }
+  markerS=null; markerDest=null;
+  if(mapS){ mapS.remove(); mapS=null; }
+  if(currentCode) localStorage.removeItem('jp_'+currentCode);
+  forget(); goHome();
+}
+
+function copyCode(){ navigator.clipboard.writeText(currentCode||'').then(()=>toast('✓ Code copié !')); }
+function copyLink(){ const l=location.origin+location.pathname+'?s='+(currentCode||''); navigator.clipboard.writeText(l).then(()=>toast('✓ Lien copié !')); }
+
+// ══ TRACKING ══
+function joinTrack(){
+  const code=document.getElementById('cinp').value.trim().toUpperCase();
+  if(code.length<4){ toast('⚠️ Code invalide'); return; }
+  save(code,'track'); joinWithCode(code);
+}
+
+function joinWithCode(code){
+  currentCode=code;
+  showScreen('ts');
+  document.getElementById('ecode').textContent=code;
+  document.getElementById('ttxt').textContent='Connexion en cours...';
+  if(!mapT){ mapT=mkMap('mt'); mapT.setView([43.2965,5.3698],13); }
+
+  // Ma position (là où j'attends)
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const ll=[pos.coords.latitude,pos.coords.longitude];
+      if(!markerDest){
+        markerDest=L.marker(ll,{icon:destIco()}).addTo(mapT).bindPopup('📍 Vous êtes ici').openPopup();
+        mapT.setView(ll,15);
+      }
+      // Envoyer ma position au conducteur via WS
+      if(wsConn) wsConn.publish({type:'observer',lat:pos.coords.latitude,lng:pos.coords.longitude});
+    },{enableHighAccuracy:true,timeout:5000});
+  }
+
+  // Connexion WebSocket pour recevoir la position du conducteur
+  wsConn=connectWS(code, d=>{
+    if(d.type==='driver') updatePos(d);
+  });
+
+  // Polling localStorage fallback toutes les 3s
+  pollId=setInterval(()=>{
+    try{
+      const d=JSON.parse(localStorage.getItem('jp_'+code));
+      if(d&&d.ts&&d.type==='driver'&&(!lastTs||d.ts>lastTs)) updatePos(d);
+    }catch(e){}
+  },3000);
+
+  // Timer ago
+  agoId=setInterval(()=>{
+    if(lastTs){
+      const ago=Math.round((Date.now()-lastTs)/1000);
+      document.getElementById('eago').textContent=ago;
+      if(ago>30){ document.getElementById('tdot').className='dot dr'; document.getElementById('tbadge').textContent='SIGNAL PERDU'; document.getElementById('tbadge').className='badge b-off'; }
+    }
+  },1000);
+}
+
+function updatePos(d){
+  if(!d||!d.lat)return;
+  const {lat,lng,speed,ts}=d;
+  if(lastTs&&ts<=lastTs)return;
+  lastTs=ts;
+  const ll=[lat,lng];
+  const ago=Math.round((Date.now()-ts)/1000);
+  if(!markerT){ markerT=L.marker(ll,{icon:carIco()}).addTo(mapT); if(markerDest) fitBoth(mapT,markerT,markerDest); else mapT.setView(ll,16); }
+  else { markerT.setLatLng(ll); if(markerDest) fitBoth(mapT,markerT,markerDest); else mapT.panTo(ll); }
+  markerT.bindPopup('🚗 En route · '+ago+'s').openPopup();
+  document.getElementById('espeed').textContent=speed||0;
+  document.getElementById('eago').textContent=ago;
+  document.getElementById('tcoords').textContent='📍 '+lat.toFixed(5)+', '+lng.toFixed(5);
+  document.getElementById('ttxt').textContent=ago<10?'🟢 En direct — La voiture arrive !':'Mis à jour il y a '+ago+'s';
+  document.getElementById('tdot').className=ago<15?'dot dg':'dot do';
+  document.getElementById('tbadge').textContent=ago<15?'EN DIRECT':'DÉLAI';
+  document.getElementById('tbadge').className=ago<15?'badge b-live':'badge b-wait';
+}
+
+// ══ NAVIGATION ══
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id==='home'?'home':id).classList.add('active');
+  setTimeout(()=>{ if(mapS) mapS.invalidateSize(); if(mapT) mapT.invalidateSize(); },200);
+}
+function goHome(){
+  if(pollId){ clearInterval(pollId); pollId=null; }
+  if(agoId){ clearInterval(agoId); agoId=null; }
+  if(ws){ ws.close(); ws=null; }
+  markerT=null; markerDest=null; lastTs=null;
+  if(mapT){ mapT.remove(); mapT=null; }
+  const sv=load();
+  if(sv.code){ document.getElementById('saved-block').style.display='block'; document.getElementById('saved-txt').textContent=sv.code; document.getElementById('saved-role-txt').textContent=sv.role==='share'?'🚗 En route':'👁️ Observateur'; }
+  showScreen('home');
+}
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+</script>
+</body>
+</html>
